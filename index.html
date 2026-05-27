@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Parser">
+  <meta name="theme-color" content="#1a73e8">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.png">
+  <title>Gmail Parser</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --blue:  #1a73e8; --green: #34a853;
+      --red:   #d93025; --sub:   #6b7280;
+      --border:#e5e7eb; --text:  #1a1a2e;
+    }
+    html, body { height: 100%; width: 100%; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: linear-gradient(160deg, #e8f0fe 0%, #eef2fb 50%, #e3f2fd 100%);
+      background-attachment: fixed;
+      color: var(--text);
+    }
+    .bubble {
+      position: fixed; border-radius: 50%; z-index: 0; pointer-events: none;
+      background: rgba(26,115,232,.08); animation: float linear infinite;
+    }
+    .bubble:nth-child(1){width:200px;height:200px;left:-70px;top:3%;animation-duration:18s}
+    .bubble:nth-child(2){width:130px;height:130px;right:-40px;top:20%;animation-duration:14s;animation-delay:-5s}
+    .bubble:nth-child(3){width:100px;height:100px;left:10%;bottom:18%;animation-duration:20s;animation-delay:-9s}
+    .bubble:nth-child(4){width:220px;height:220px;right:-90px;bottom:2%;animation-duration:22s;animation-delay:-3s}
+    @keyframes float {
+      0%  {transform:translateY(0) rotate(0deg);opacity:.6}
+      50% {transform:translateY(-28px) rotate(180deg);opacity:1}
+      100%{transform:translateY(0) rotate(360deg);opacity:.6}
+    }
+    .scene {
+      position: relative; z-index: 1;
+      width: 100%; min-height: 100vh; min-height: 100dvh;
+      display: flex; flex-direction: column;
+    }
+    .card {
+      flex: 1; width: 100%;
+      background: rgba(255,255,255,.88);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      display: flex; flex-direction: column;
+      padding: 64px 24px 40px;
+      animation: cardIn .4s cubic-bezier(.34,1.4,.64,1) both;
+    }
+    @media(min-width:520px){
+      .scene{align-items:center;justify-content:center;padding:32px 16px}
+      .card{
+        flex:none;max-width:420px;border-radius:24px;
+        border:1px solid rgba(255,255,255,.6);
+        box-shadow:0 8px 40px rgba(26,115,232,.13);
+        padding:44px 36px 36px;
+      }
+    }
+    @keyframes cardIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    .icon-wrap{
+      width:80px;height:80px;margin:0 auto 20px;
+      background:linear-gradient(135deg,#4285f4,#1a73e8);
+      border-radius:22px;display:flex;align-items:center;justify-content:center;
+      font-size:38px;flex-shrink:0;
+      box-shadow:0 4px 20px rgba(26,115,232,.4);
+      animation:pulse 3s ease-in-out infinite;
+    }
+    @keyframes pulse{
+      0%,100%{box-shadow:0 4px 20px rgba(26,115,232,.35)}
+      50%    {box-shadow:0 6px 40px rgba(26,115,232,.7)}
+    }
+    h2{font-size:22px;font-weight:600;text-align:center;margin-bottom:6px;letter-spacing:-.3px}
+    .subtitle{text-align:center;font-size:14px;color:var(--sub);margin-bottom:32px}
+    #btn{
+      position:relative;overflow:hidden;
+      width:100%;padding:20px;
+      background:linear-gradient(135deg,#4285f4,#1a73e8);
+      color:#fff;border:none;border-radius:16px;
+      font-size:17px;font-weight:600;cursor:pointer;flex-shrink:0;
+      box-shadow:0 4px 20px rgba(26,115,232,.45);
+      transition:transform .15s,box-shadow .15s;
+      -webkit-user-select:none;user-select:none;
+    }
+    #btn:active:not(:disabled){transform:scale(.97);box-shadow:0 2px 10px rgba(26,115,232,.3)}
+    #btn:disabled{background:linear-gradient(135deg,#9ab4e8,#7fa8e0);box-shadow:none;cursor:default}
+    .ripple{
+      position:absolute;border-radius:50%;
+      background:rgba(255,255,255,.35);
+      transform:scale(0);animation:ripple .55s linear;pointer-events:none;
+    }
+    @keyframes ripple{to{transform:scale(4);opacity:0}}
+    .progress-wrap{margin:22px 0 0;display:none;animation:fadeIn .3s ease both;flex-shrink:0}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    .progress-header{display:flex;justify-content:space-between;margin-bottom:10px}
+    .progress-label{font-size:14px;font-weight:500;color:var(--sub)}
+    .progress-pct{font-size:14px;font-weight:600;color:var(--blue)}
+    .bar-track{background:var(--border);border-radius:99px;height:12px;overflow:hidden}
+    .bar-fill{
+      height:100%;width:0%;border-radius:99px;
+      background:linear-gradient(90deg,#4285f4 0%,#34a853 50%,#4285f4 100%);
+      background-size:200% 100%;
+      transition:width .5s cubic-bezier(.4,0,.2,1);
+      animation:shimmer 2s linear infinite;
+    }
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    .status-row{
+      display:flex;align-items:flex-start;gap:10px;
+      margin-top:20px;padding:16px;
+      background:rgba(26,115,232,.06);border-radius:14px;
+      transition:background .3s;flex-shrink:0;
+    }
+    .status-row.ok {background:rgba(52,168,83,.08)}
+    .status-row.err{background:rgba(217,48,37,.08)}
+    .status-dot{
+      width:10px;height:10px;border-radius:50%;
+      background:var(--blue);flex-shrink:0;margin-top:3px;transition:background .3s;
+    }
+    .status-row.ok  .status-dot{background:var(--green)}
+    .status-row.err .status-dot{background:var(--red)}
+    .status-row.running .status-dot{animation:blink .9s ease-in-out infinite}
+    @keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.6)}}
+    #msg{font-size:15px;font-weight:500;color:var(--text);line-height:1.5}
+    #resetBtn{
+      display:block;width:100%;margin-top:14px;
+      background:none;border:1px solid var(--border);
+      color:var(--sub);border-radius:12px;
+      padding:14px;font-size:14px;cursor:pointer;
+      transition:background .2s;flex-shrink:0;
+    }
+    #resetBtn:active{background:var(--border)}
+    .spacer{flex:1;min-height:20px}
+    .last-run{text-align:center;font-size:12px;color:var(--sub);margin-top:16px}
+  </style>
+</head>
+<body>
+  <div class="bubble"></div><div class="bubble"></div>
+  <div class="bubble"></div><div class="bubble"></div>
+  <div class="scene">
+    <div class="card">
+      <div class="icon-wrap">📬</div>
+      <h2>Gmail Parser</h2>
+      <p class="subtitle">Парсинг кодов из входящих писем</p>
+      <button id="btn" onclick="start(event)">▶ Запустить</button>
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-header">
+          <span class="progress-label">Прогресс</span>
+          <span class="progress-pct" id="pct">0%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
+      </div>
+      <div class="status-row" id="statusRow">
+        <div class="status-dot"></div>
+        <div id="msg">Готов к запуску</div>
+      </div>
+      <button id="resetBtn" onclick="reset()">↺ Сбросить статус</button>
+      <div class="spacer"></div>
+      <div class="last-run" id="lastRun"></div>
+    </div>
+  </div>
+
+<script>
+  // ← ВСТАВЬ СЮДА URL твоего GAS веб-приложения
+  const GAS_URL = "https://script.google.com/macros/s/ТВОЙ_ID/exec";
+
+  window.onload = function() {
+    fetch(GAS_URL + "?action=status")
+      .then(r => r.json())
+      .then(function(d) {
+        if (d.status === 'running') {
+          setStatus('⚠️ Предыдущий запуск завис. Сбросьте статус.', 'err');
+        } else if (d.status === 'done') {
+          setStatus('✅ Последний запуск завершён.', 'ok');
+          setProgress(100);
+        } else if (d.status === 'error') {
+          setStatus('❌ Ошибка: ' + d.lastError, 'err');
+        }
+      })
+      .catch(function() {});
+  };
+
+  function start(e) {
+    const btn = document.getElementById('btn');
+    const r   = document.createElement('span');
+    const rc  = btn.getBoundingClientRect();
+    const sz  = Math.max(rc.width, rc.height);
+    r.className = 'ripple';
+    r.style.cssText = 'width:'+sz+'px;height:'+sz+'px;'
+      +'left:'+(e.clientX-rc.left-sz/2)+'px;'
+      +'top:' +(e.clientY-rc.top -sz/2)+'px;';
+    btn.appendChild(r);
+    setTimeout(function(){r.remove()}, 600);
+
+    btn.disabled = true;
+    setStatus('⏳ Выполняется...', 'running');
+    showProgress(true);
+    setProgress(5);
+
+    fetch(GAS_URL + "?action=start")
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.status === 'already_running') {
+          setStatus('⚠️ Уже выполняется. Подождите или сбросьте статус.', 'err');
+          btn.disabled = false;
+          return;
+        }
+        setProgress(100);
+        setStatus('✅ Готово!', 'ok');
+        btn.disabled = false;
+        document.getElementById('lastRun').textContent =
+          'Последний запуск: ' + new Date().toLocaleTimeString('ru-RU');
+      })
+      .catch(function(err) {
+        setProgress(0);
+        setStatus('❌ Ошибка соединения: ' + err, 'err');
+        btn.disabled = false;
+      });
+  }
+
+  function reset() {
+    fetch(GAS_URL + "?action=reset")
+      .then(function(r) { return r.json(); })
+      .then(function() {
+        setStatus('Статус сброшен. Готов к запуску.', '');
+        setProgress(0);
+        showProgress(false);
+        document.getElementById('btn').disabled = false;
+      });
+  }
+
+  function setProgress(p) {
+    document.getElementById('barFill').style.width = p + '%';
+    document.getElementById('pct').textContent = p + '%';
+  }
+  function showProgress(v) {
+    document.getElementById('progressWrap').style.display = v ? 'block' : 'none';
+  }
+  function setStatus(text, type) {
+    const row = document.getElementById('statusRow');
+    row.className = 'status-row ' + (type || '');
+    document.getElementById('msg').textContent = text;
+  }
+</script>
+</body>
+</html>
