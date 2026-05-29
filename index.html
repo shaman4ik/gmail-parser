@@ -2,249 +2,506 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Parser">
-  <meta name="theme-color" content="#1a73e8">
+  <meta name="theme-color" content="#c8b89a">
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icon.png">
-  <title>Gmail Parser</title>
+  <link rel="apple-touch-icon" href="/gmail-parser/icon.png">
+  <title>Волк ловит письма</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    :root {
-      --blue:  #1a73e8; --green: #34a853;
-      --red:   #d93025; --sub:   #6b7280;
-      --border:#e5e7eb; --text:  #1a1a2e;
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
+
+    html, body {
+      height: 100%; width: 100%;
+      background: #d4c5a9;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+      font-family: 'Press Start 2P', monospace;
     }
-    html, body { height: 100%; width: 100%; }
-    body {
-      font-family: 'Inter', -apple-system, sans-serif;
-      background: linear-gradient(160deg, #e8f0fe 0%, #eef2fb 50%, #e3f2fd 100%);
-      background-attachment: fixed;
-      color: var(--text);
-    }
-    .bubble {
-      position: fixed; border-radius: 50%; z-index: 0; pointer-events: none;
-      background: rgba(26,115,232,.08); animation: float linear infinite;
-    }
-    .bubble:nth-child(1){width:200px;height:200px;left:-70px;top:3%;animation-duration:18s}
-    .bubble:nth-child(2){width:130px;height:130px;right:-40px;top:20%;animation-duration:14s;animation-delay:-5s}
-    .bubble:nth-child(3){width:100px;height:100px;left:10%;bottom:18%;animation-duration:20s;animation-delay:-9s}
-    .bubble:nth-child(4){width:220px;height:220px;right:-90px;bottom:2%;animation-duration:22s;animation-delay:-3s}
-    @keyframes float {
-      0%  {transform:translateY(0) rotate(0deg);opacity:.6}
-      50% {transform:translateY(-28px) rotate(180deg);opacity:1}
-      100%{transform:translateY(0) rotate(360deg);opacity:.6}
-    }
-    .scene {
-      position: relative; z-index: 1;
-      width: 100%; min-height: 100vh; min-height: 100dvh;
+
+    /* ===== КОРПУС ===== */
+    .console {
+      width: 100vw; height: 100vh;
+      max-width: 480px;
+      background: linear-gradient(160deg, #e8dcc8 0%, #d4c5a9 40%, #c8b89a 100%);
+      border-radius: 24px;
+      box-shadow:
+        inset 0 2px 4px rgba(255,255,255,.6),
+        inset 0 -2px 4px rgba(0,0,0,.2),
+        0 8px 32px rgba(0,0,0,.4);
       display: flex; flex-direction: column;
+      align-items: center;
+      padding: 12px 8px 10px;
+      position: relative;
     }
-    .card {
-      flex: 1; width: 100%;
-      background: rgba(255,255,255,.88);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
+
+    .title-top {
+      font-size: 9px; letter-spacing: 3px;
+      color: #5a4a3a; text-transform: uppercase;
+      margin-bottom: 6px; text-align: center;
+    }
+
+    /* ===== ЭКРАН ===== */
+    .screen-bezel {
+      width: 100%; flex: 1;
+      background: #2a2a2a;
+      border-radius: 12px; padding: 4px;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,.8), 0 2px 4px rgba(255,255,255,.3);
+      position: relative;
+    }
+
+    .screen {
+      width: 100%; height: 100%;
+      background: #8fa888;
+      border-radius: 8px;
+      position: relative; overflow: hidden;
+    }
+
+    /* LCD-сетка */
+    .screen::before {
+      content: '';
+      position: absolute; inset: 0; z-index: 10;
+      background-image:
+        repeating-linear-gradient(0deg, rgba(0,0,0,.03) 0px, rgba(0,0,0,.03) 1px, transparent 1px, transparent 3px),
+        repeating-linear-gradient(90deg, rgba(0,0,0,.03) 0px, rgba(0,0,0,.03) 1px, transparent 1px, transparent 3px);
+      pointer-events: none;
+    }
+
+    /* Блик */
+    .screen::after {
+      content: '';
+      position: absolute; inset: 0; z-index: 11;
+      background: linear-gradient(135deg, rgba(255,255,255,.12) 0%, transparent 50%);
+      pointer-events: none; border-radius: 8px;
+    }
+
+    canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+
+    .title-bottom {
+      font-size: 8px; letter-spacing: 2px;
+      color: #5a4a3a; text-transform: uppercase;
+      margin-top: 6px; text-align: center;
+    }
+
+    /* ===== КНОПКИ ===== */
+    .controls {
+      width: 100%;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 4px 4px; gap: 8px;
+    }
+
+    .btn-group { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+    .btn-label { font-size: 7px; color: #5a4a3a; text-align: center; letter-spacing: 1px; }
+
+    .btn-red {
+      width: 52px; height: 52px;
+      background: radial-gradient(circle at 35% 35%, #ff6b6b, #cc2200);
+      border-radius: 50%; border: none; cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,.4), inset 0 1px 2px rgba(255,255,255,.3);
+      transition: transform .1s, box-shadow .1s;
+    }
+    .btn-red:active {
+      transform: scale(.93) translateY(2px);
+      box-shadow: 0 2px 4px rgba(0,0,0,.4);
+    }
+
+    .btn-start { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+    .btn-oval {
+      width: 70px; height: 28px;
+      background: linear-gradient(180deg, #c8b89a, #a89880);
+      border-radius: 14px; border: none; cursor: pointer;
+      box-shadow: 0 3px 6px rgba(0,0,0,.3), inset 0 1px 2px rgba(255,255,255,.4);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 6px; color: #5a4a3a; letter-spacing: 1px;
+      transition: transform .1s;
+    }
+    .btn-oval:active { transform: scale(.95) translateY(1px); }
+    .btn-oval.active-btn {
+      background: linear-gradient(180deg, #ff9966, #cc5500);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(255,100,0,.6), 0 3px 6px rgba(0,0,0,.3);
+    }
+
+    /* ===== ОВЕРЛЕИ ===== */
+    #overlay, #doneOverlay {
+      position: absolute; inset: 0; z-index: 20;
+      background: rgba(143,168,136,.92);
       display: flex; flex-direction: column;
-      padding: 64px 24px 40px;
-      animation: cardIn .4s cubic-bezier(.34,1.4,.64,1) both;
+      align-items: center; justify-content: center;
+      gap: 12px; border-radius: 8px;
     }
-    @media(min-width:520px){
-      .scene{align-items:center;justify-content:center;padding:32px 16px}
-      .card{
-        flex:none;max-width:420px;border-radius:24px;
-        border:1px solid rgba(255,255,255,.6);
-        box-shadow:0 8px 40px rgba(26,115,232,.13);
-        padding:44px 36px 36px;
-      }
-    }
-    @keyframes cardIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-    .icon-wrap{
-      width:80px;height:80px;margin:0 auto 20px;
-      background:linear-gradient(135deg,#4285f4,#1a73e8);
-      border-radius:22px;display:flex;align-items:center;justify-content:center;
-      font-size:38px;flex-shrink:0;
-      box-shadow:0 4px 20px rgba(26,115,232,.4);
-      animation:pulse 3s ease-in-out infinite;
-    }
-    @keyframes pulse{
-      0%,100%{box-shadow:0 4px 20px rgba(26,115,232,.35)}
-      50%    {box-shadow:0 6px 40px rgba(26,115,232,.7)}
-    }
-    h2{font-size:22px;font-weight:600;text-align:center;margin-bottom:6px;letter-spacing:-.3px}
-    .subtitle{text-align:center;font-size:14px;color:var(--sub);margin-bottom:32px}
-    #btn{
-      position:relative;overflow:hidden;
-      width:100%;padding:20px;
-      background:linear-gradient(135deg,#4285f4,#1a73e8);
-      color:#fff;border:none;border-radius:16px;
-      font-size:17px;font-weight:600;cursor:pointer;flex-shrink:0;
-      box-shadow:0 4px 20px rgba(26,115,232,.45);
-      transition:transform .15s,box-shadow .15s;
-      -webkit-user-select:none;user-select:none;
-    }
-    #btn:active:not(:disabled){transform:scale(.97);box-shadow:0 2px 10px rgba(26,115,232,.3)}
-    #btn:disabled{background:linear-gradient(135deg,#9ab4e8,#7fa8e0);box-shadow:none;cursor:default}
-    .ripple{
-      position:absolute;border-radius:50%;
-      background:rgba(255,255,255,.35);
-      transform:scale(0);animation:ripple .55s linear;pointer-events:none;
-    }
-    @keyframes ripple{to{transform:scale(4);opacity:0}}
-    .progress-wrap{margin:22px 0 0;display:none;animation:fadeIn .3s ease both;flex-shrink:0}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-    .progress-header{display:flex;justify-content:space-between;margin-bottom:10px}
-    .progress-label{font-size:14px;font-weight:500;color:var(--sub)}
-    .progress-pct{font-size:14px;font-weight:600;color:var(--blue)}
-    .bar-track{background:var(--border);border-radius:99px;height:12px;overflow:hidden}
-    .bar-fill{
-      height:100%;width:0%;border-radius:99px;
-      background:linear-gradient(90deg,#4285f4 0%,#34a853 50%,#4285f4 100%);
-      background-size:200% 100%;
-      transition:width .5s cubic-bezier(.4,0,.2,1);
-      animation:shimmer 2s linear infinite;
-    }
-    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-    .status-row{
-      display:flex;align-items:flex-start;gap:10px;
-      margin-top:20px;padding:16px;
-      background:rgba(26,115,232,.06);border-radius:14px;
-      transition:background .3s;flex-shrink:0;
-    }
-    .status-row.ok {background:rgba(52,168,83,.08)}
-    .status-row.err{background:rgba(217,48,37,.08)}
-    .status-dot{
-      width:10px;height:10px;border-radius:50%;
-      background:var(--blue);flex-shrink:0;margin-top:3px;transition:background .3s;
-    }
-    .status-row.ok  .status-dot{background:var(--green)}
-    .status-row.err .status-dot{background:var(--red)}
-    .status-row.running .status-dot{animation:blink .9s ease-in-out infinite}
-    @keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.6)}}
-    #msg{font-size:15px;font-weight:500;color:var(--text);line-height:1.5}
-    #resetBtn{
-      display:block;width:100%;margin-top:14px;
-      background:none;border:1px solid var(--border);
-      color:var(--sub);border-radius:12px;
-      padding:14px;font-size:14px;cursor:pointer;
-      transition:background .2s;flex-shrink:0;
-    }
-    #resetBtn:active{background:var(--border)}
-    .spacer{flex:1;min-height:20px}
-    .last-run{text-align:center;font-size:12px;color:var(--sub);margin-top:16px}
+    #doneOverlay { display: none; }
+
+    .wolf-big { font-size: 48px; animation: bounce 1s ease-in-out infinite; }
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+    .ov-title { font-size: 9px; color: #2a3a2a; text-align: center; line-height: 1.8; letter-spacing: 1px; }
+    .ov-sub   { font-size: 7px; color: #4a5a4a; animation: blink 1s step-end infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    .done-icon  { font-size: 40px; }
+    .done-title { font-size: 9px; color: #2a3a2a; text-align: center; line-height: 1.8; }
+    .done-score { font-size: 14px; color: #1a4a1a; }
+    .done-time  { font-size: 7px; color: #4a5a4a; }
   </style>
 </head>
 <body>
-  <div class="bubble"></div><div class="bubble"></div>
-  <div class="bubble"></div><div class="bubble"></div>
-  <div class="scene">
-    <div class="card">
-      <div class="icon-wrap">📬</div>
-      <h2>Gmail Parser</h2>
-      <p class="subtitle">Парсинг кодов из входящих писем</p>
-      <button id="btn" onclick="start(event)">▶ Запустить</button>
-      <div class="progress-wrap" id="progressWrap">
-        <div class="progress-header">
-          <span class="progress-label">Прогресс</span>
-          <span class="progress-pct" id="pct">0%</span>
-        </div>
-        <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
+<div class="console">
+  <div class="title-top">Волк ловит письма</div>
+
+  <div class="screen-bezel">
+    <div class="screen">
+      <canvas id="gameCanvas"></canvas>
+
+      <div id="overlay">
+        <div class="wolf-big">🐺</div>
+        <div class="ov-title">GMAIL<br>PARSER</div>
+        <div class="ov-sub">нажми СТАРТ</div>
       </div>
-      <div class="status-row" id="statusRow">
-        <div class="status-dot"></div>
-        <div id="msg">Готов к запуску</div>
+
+      <div id="doneOverlay">
+        <div class="done-icon">🎉</div>
+        <div class="done-title">ГОТОВО!</div>
+        <div class="done-score" id="doneScore">0000</div>
+        <div class="done-time"  id="doneTime"></div>
       </div>
-      <button id="resetBtn" onclick="reset()">↺ Сбросить статус</button>
-      <div class="spacer"></div>
-      <div class="last-run" id="lastRun"></div>
     </div>
   </div>
 
+  <div class="title-bottom">Электроника</div>
+
+  <div class="controls">
+    <div class="btn-group">
+      <button class="btn-red" id="btnReset"></button>
+      <div class="btn-label">СБРОС</div>
+    </div>
+    <div class="btn-start">
+      <button class="btn-oval" id="btnStart">СТАРТ</button>
+      <div class="btn-label" id="statusLabel">готов</div>
+    </div>
+    <div class="btn-group">
+      <button class="btn-red" id="btnInfo"></button>
+      <div class="btn-label">ИНФО</div>
+    </div>
+  </div>
+</div>
+
 <script>
-  // ← ВСТАВЬ СЮДА URL твоего GAS веб-приложения
-  const GAS_URL = "https://script.google.com/macros/s/AKfycby2HXW5PInaz9KSUGdTbHhGqIWQESRCJkXX2aCwUnz3xiKirJJC-O7NjXAvc351w3lx/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycby2HXW5PInaz9KSUGdTbHhGqIWQESRCJkXX2aCwUnz3xiKirJJC-O7NjXAvc351w3lx/exec";
 
-  window.onload = function() {
-    fetch(GAS_URL + "?action=status")
-      .then(r => r.json())
-      .then(function(d) {
-        if (d.status === 'running') {
-          setStatus('⚠️ Предыдущий запуск завис. Сбросьте статус.', 'err');
-        } else if (d.status === 'done') {
-          setStatus('✅ Последний запуск завершён.', 'ok');
-          setProgress(100);
-        } else if (d.status === 'error') {
-          setStatus('❌ Ошибка: ' + d.lastError, 'err');
-        }
-      })
-      .catch(function() {});
-  };
+// ===== CANVAS =====
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
 
-  function start(e) {
-    const btn = document.getElementById('btn');
-    const r   = document.createElement('span');
-    const rc  = btn.getBoundingClientRect();
-    const sz  = Math.max(rc.width, rc.height);
-    r.className = 'ripple';
-    r.style.cssText = 'width:'+sz+'px;height:'+sz+'px;'
-      +'left:'+(e.clientX-rc.left-sz/2)+'px;'
-      +'top:' +(e.clientY-rc.top -sz/2)+'px;';
-    btn.appendChild(r);
-    setTimeout(function(){r.remove()}, 600);
+function resizeCanvas() {
+  canvas.width  = canvas.parentElement.clientWidth;
+  canvas.height = canvas.parentElement.clientHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
 
-    btn.disabled = true;
-    setStatus('⏳ Выполняется...', 'running');
-    showProgress(true);
-    setProgress(5);
+const W = () => canvas.width;
+const H = () => canvas.height;
 
-    fetch(GAS_URL + "?action=start")
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        if (d.status === 'already_running') {
-          setStatus('⚠️ Уже выполняется. Подождите или сбросьте статус.', 'err');
-          btn.disabled = false;
-          return;
-        }
-        setProgress(100);
-        setStatus('✅ Готово!', 'ok');
-        btn.disabled = false;
-        document.getElementById('lastRun').textContent =
-          'Последний запуск: ' + new Date().toLocaleTimeString('ru-RU');
-      })
-      .catch(function(err) {
-        setProgress(0);
-        setStatus('❌ Ошибка соединения: ' + err, 'err');
-        btn.disabled = false;
-      });
+// ===== STATE =====
+let score=0, running=false, startTime=null, animId=null;
+let eggs=[], particles=[], wolfX=0.5, wolfDir=1, wolfAnim=0;
+let eggTimer=0, progress=0;
+
+const LANES = [
+  {side:'left',  yFrac:0.30},
+  {side:'left',  yFrac:0.46},
+  {side:'right', yFrac:0.30},
+  {side:'right', yFrac:0.46},
+];
+
+// ===== DRAW =====
+function drawBg() {
+  ctx.fillStyle = '#8fa888';
+  ctx.fillRect(0,0,W(),H());
+}
+
+function drawHenhouses() {
+  ctx.save();
+  ctx.strokeStyle = '#5a3a1a';
+  ctx.lineWidth = Math.max(2, W()*0.006);
+  // Левые полки
+  for (let i=0;i<3;i++) {
+    const y = H()*(0.28+i*0.17);
+    ctx.beginPath();
+    ctx.moveTo(W()*0.03, y);
+    ctx.lineTo(W()*0.28, y + H()*0.1);
+    ctx.stroke();
   }
+  // Правые полки
+  for (let i=0;i<3;i++) {
+    const y = H()*(0.28+i*0.17);
+    ctx.beginPath();
+    ctx.moveTo(W()*0.97, y);
+    ctx.lineTo(W()*0.72, y + H()*0.1);
+    ctx.stroke();
+  }
+  // Трава
+  ctx.fillStyle = '#3a6a3a';
+  for (let i=0;i<22;i++) {
+    const gx = W()*0.03 + i*W()*0.044;
+    const gy = H()*0.87;
+    ctx.beginPath();
+    ctx.moveTo(gx, gy);
+    ctx.lineTo(gx+3, gy-7);
+    ctx.lineTo(gx+6, gy);
+    ctx.fill();
+  }
+  ctx.restore();
+}
 
-  function reset() {
-    fetch(GAS_URL + "?action=reset")
-      .then(function(r) { return r.json(); })
-      .then(function() {
-        setStatus('Статус сброшен. Готов к запуску.', '');
-        setProgress(0);
-        showProgress(false);
-        document.getElementById('btn').disabled = false;
-      });
-  }
+function drawHens() {
+  const sz = H()*0.065;
+  ctx.font = `${sz}px serif`;
+  ctx.textAlign = 'center';
+  // Левые куры
+  ctx.fillText('🐔', W()*0.07, H()*0.30);
+  ctx.fillText('🐔', W()*0.07, H()*0.47);
+  // Правые куры (зеркально через scale)
+  ctx.save();
+  ctx.translate(W()*0.93, H()*0.30);
+  ctx.scale(-1,1);
+  ctx.fillText('🐔', 0, 0);
+  ctx.restore();
+  ctx.save();
+  ctx.translate(W()*0.93, H()*0.47);
+  ctx.scale(-1,1);
+  ctx.fillText('🐔', 0, 0);
+  ctx.restore();
+}
 
-  function setProgress(p) {
-    document.getElementById('barFill').style.width = p + '%';
-    document.getElementById('pct').textContent = p + '%';
+function drawWolf() {
+  const x = wolfX * W();
+  const y = H() * 0.79;
+  const bounce = Math.sin(wolfAnim*0.25)*3;
+  ctx.save();
+  ctx.translate(x, y+bounce);
+  if (wolfDir < 0) ctx.scale(-1,1);
+  ctx.font = `${H()*0.14}px serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('🐺', 0, 0);
+  // Корзина
+  ctx.font = `${H()*0.07}px serif`;
+  ctx.fillText('🧺', 22, H()*0.04);
+  ctx.restore();
+}
+
+function drawEggs() {
+  eggs.forEach(egg => {
+    ctx.save();
+    ctx.translate(egg.x, egg.y);
+    ctx.font = `${H()*0.055}px serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('🥚', 0, 0);
+    ctx.restore();
+  });
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.font = `${Math.round(16*p.life)}px serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('✨', p.x, p.y);
+    ctx.restore();
+  });
+}
+
+function drawScore() {
+  const s = String(score).padStart(4,'0');
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.1)';
+  ctx.fillRect(W()*0.52, H()*0.06, W()*0.26, H()*0.1);
+  ctx.font = `bold ${H()*0.09}px 'Courier New', monospace`;
+  ctx.fillStyle = '#1a3a1a';
+  ctx.textAlign = 'center';
+  ctx.fillText(s, W()*0.65, H()*0.14);
+  ctx.restore();
+}
+
+function drawProgressBar() {
+  const pw = W()*0.7, px = W()*0.15, py = H()*0.93;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.15)';
+  ctx.fillRect(px, py, pw, 5);
+  ctx.fillStyle = '#2a5a2a';
+  ctx.fillRect(px, py, pw*(progress/100), 5);
+  // Текст %
+  if (running) {
+    ctx.font = `${H()*0.045}px 'Courier New', monospace`;
+    ctx.fillStyle = '#1a3a1a';
+    ctx.textAlign = 'left';
+    ctx.fillText(progress+'%', W()*0.04, H()*0.1);
   }
-  function showProgress(v) {
-    document.getElementById('progressWrap').style.display = v ? 'block' : 'none';
+  ctx.restore();
+}
+
+function render() {
+  ctx.clearRect(0,0,W(),H());
+  drawBg();
+  drawHenhouses();
+  drawHens();
+  drawEggs();
+  drawWolf();
+  drawParticles();
+  drawScore();
+  drawProgressBar();
+}
+
+// ===== LOGIC =====
+function spawnEgg() {
+  const lane = LANES[Math.floor(Math.random()*LANES.length)];
+  const sx = lane.side==='left' ? W()*0.07 : W()*0.93;
+  const sy = H()*lane.yFrac;
+  eggs.push({
+    x:sx, y:sy, startX:sx, startY:sy,
+    endX:W()*0.5, endY:H()*0.79,
+    t:0, speed:0.004+Math.random()*0.003
+  });
+}
+
+function updateEggs() {
+  eggs = eggs.filter(egg => {
+    egg.t += egg.speed * (1 + progress/150);
+    const t = egg.t;
+    egg.x = egg.startX + (egg.endX-egg.startX)*t;
+    egg.y = egg.startY + (egg.endY-egg.startY)*t - Math.sin(t*Math.PI)*H()*0.18;
+
+    // Поймал?
+    if (t > 0.65 && Math.hypot(egg.x-wolfX*W(), egg.y-H()*0.79) < W()*0.13) {
+      score++;
+      particles.push({x:egg.x, y:egg.y, life:1});
+      return false;
+    }
+    return egg.t < 1;
+  });
+}
+
+function updateParticles() {
+  particles = particles.filter(p => { p.y-=1.5; p.life-=0.04; return p.life>0; });
+}
+
+function updateWolf() {
+  wolfAnim++;
+  // Ищем ближайшее яйцо в нижней части траектории
+  let nearest=null, minD=Infinity;
+  eggs.forEach(egg => {
+    if (egg.t > 0.45) {
+      const d = Math.abs(egg.x - wolfX*W());
+      if (d < minD) { minD=d; nearest=egg; }
+    }
+  });
+  if (nearest) {
+    const tx = nearest.x/W();
+    const diff = tx - wolfX;
+    wolfDir = diff>0 ? 1 : -1;
+    wolfX += diff*0.07;
+  } else {
+    wolfX += wolfDir*0.002;
+    if (wolfX>0.75) wolfDir=-1;
+    if (wolfX<0.25) wolfDir=1;
   }
-  function setStatus(text, type) {
-    const row = document.getElementById('statusRow');
-    row.className = 'status-row ' + (type || '');
-    document.getElementById('msg').textContent = text;
-  }
+  wolfX = Math.max(0.08, Math.min(0.92, wolfX));
+}
+
+function gameLoop() {
+  if (!running) return;
+  eggTimer++;
+  const rate = Math.max(15, 50-Math.floor(progress/4));
+  if (eggTimer >= rate) { spawnEgg(); eggTimer=0; }
+  updateEggs();
+  updateParticles();
+  updateWolf();
+  render();
+  animId = requestAnimationFrame(gameLoop);
+}
+
+// ===== API =====
+function startParsing() {
+  if (running) return;
+  running=true; score=0; progress=0;
+  eggs=[]; particles=[]; wolfX=0.5; startTime=Date.now();
+
+  document.getElementById('overlay').style.display    = 'none';
+  document.getElementById('doneOverlay').style.display = 'none';
+  document.getElementById('btnStart').classList.add('active-btn');
+  document.getElementById('btnStart').textContent = '...';
+  setStatus('парсинг');
+  gameLoop();
+
+  // Polling прогресса
+  const poll = setInterval(() => {
+    if (!running) { clearInterval(poll); return; }
+    fetch(GAS_URL+"?action=status")
+      .then(r=>r.json())
+      .then(d => { progress=parseInt(d.progress)||progress; })
+      .catch(()=>{});
+  }, 2500);
+
+  fetch(GAS_URL+"?action=start")
+    .then(r=>r.json())
+    .then(d => { clearInterval(poll); progress=100; finishGame(); })
+    .catch(()  => { clearInterval(poll); finishGame(); });
+}
+
+function finishGame() {
+  running=false;
+  cancelAnimationFrame(animId);
+  render();
+  const el = Math.round((Date.now()-startTime)/1000);
+  const m=Math.floor(el/60), s=el%60;
+  document.getElementById('doneScore').textContent = String(score).padStart(4,'0');
+  document.getElementById('doneTime').textContent  = `время: ${m}:${String(s).padStart(2,'0')}`;
+  document.getElementById('doneOverlay').style.display = 'flex';
+  document.getElementById('btnStart').classList.remove('active-btn');
+  document.getElementById('btnStart').textContent = 'СТАРТ';
+  setStatus('готово');
+}
+
+function resetGame() {
+  running=false; cancelAnimationFrame(animId);
+  score=0; progress=0; eggs=[]; particles=[]; wolfX=0.5;
+  document.getElementById('overlay').style.display     = 'flex';
+  document.getElementById('doneOverlay').style.display = 'none';
+  document.getElementById('btnStart').classList.remove('active-btn');
+  document.getElementById('btnStart').textContent = 'СТАРТ';
+  setStatus('готов');
+  render();
+  fetch(GAS_URL+"?action=reset").catch(()=>{});
+}
+
+function setStatus(t) { document.getElementById('statusLabel').textContent=t; }
+
+// ===== BUTTONS =====
+document.getElementById('btnStart').addEventListener('click', startParsing);
+document.getElementById('btnReset').addEventListener('click', resetGame);
+document.getElementById('btnInfo').addEventListener('click', () => {
+  fetch(GAS_URL+"?action=status")
+    .then(r=>r.json())
+    .then(d=>setStatus(d.status+' '+d.progress+'%'))
+    .catch(()=>setStatus('нет связи'));
+});
+
+// ===== INIT =====
+window.addEventListener('load', () => {
+  resizeCanvas(); render();
+  fetch(GAS_URL+"?action=status")
+    .then(r=>r.json())
+    .then(d=>{ if(d.status==='done') setStatus('последний: ок'); })
+    .catch(()=>{});
+});
 </script>
 </body>
 </html>
