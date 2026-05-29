@@ -450,13 +450,28 @@ function startParsing() {
 
     fetch(GAS_URL+"?action=status")
       .then(r => r.json())
-      .then(d => {
+            .then(d => {
         const p = parseInt(d.progress) || 0;
         if (p > progress) progress = p;
 
+        // Синхронизируем счётчик с реальным количеством кодов
+        const real = parseInt(d.codesFound) || 0;
+        if (real > score) {
+          // Добавляем недостающие яйца в анимацию
+          const diff = real - score;
+          for (let i = 0; i < diff; i++) {
+            particles.push({
+              x: wolfX * W() + (Math.random()-0.5)*40,
+              y: H()*0.75,
+              life: 1
+            });
+          }
+          score = real;
+        }
         if (d.status === 'done') {
           clearInterval(poll);
           progress = 100;
+          score = parseInt(d.codesFound) || score;
           finishGame();
         } else if (d.status === 'error') {
           clearInterval(poll);
