@@ -2,7 +2,7 @@
   "name": "Gmail Parser",
   "short_name": "Parser",
   "description": "Парсинг кодов из входящих писем",
-  "start_url": "/",
+  "start_url": "/gmail-parser/"
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#1a73e8",
