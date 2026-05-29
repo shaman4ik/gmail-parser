@@ -435,7 +435,16 @@ function startParsing() {
   gameLoop();
 
   // Шаг 1: отправляем старт (fire-and-forget, не ждём завершения)
-  fetch(GAS_URL+"?action=start").catch(()=>{});
+    // Шаг 1: отправляем старт один раз
+  fetch(GAS_URL+"?action=start")
+    .then(r => r.json())
+    .then(d => {
+      if (d.status === "already_running") {
+        setStatus("уже запущен");
+      }
+    })
+    .catch(()=>{});
+
 
   // Шаг 2: polling — ждём пока status станет done/error
   const poll = setInterval(() => {
