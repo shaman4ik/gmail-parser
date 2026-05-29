@@ -514,11 +514,11 @@ function setStatus(t) { document.getElementById('statusLabel').textContent=t; }
 document.getElementById('btnStart').addEventListener('click', startParsing);
 document.getElementById('btnReset').addEventListener('click', resetGame);
 document.getElementById('btnInfo').addEventListener('click', () => {
-  fetch(GAS_URL+"?action=status")
-    .then(r=>r.json())
-    .then(d=>setStatus(d.status+' '+d.progress+'%'))
-    .catch(()=>setStatus('нет связи'));
+  window.close();
+  // Fallback если window.close() заблокирован браузером
+  window.location.href = 'about:blank';
 });
+
 
 // ===== INIT =====
 window.addEventListener('load', () => {
