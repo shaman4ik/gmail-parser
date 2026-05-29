@@ -322,14 +322,13 @@ function drawParticles() {
 function drawScore() {
   const s = String(score).padStart(4,'0');
   ctx.save();
-  ctx.fillStyle = 'rgba(0,0,0,.1)';
-  ctx.fillRect(W()*0.52, H()*0.06, W()*0.26, H()*0.1);
   ctx.font = `bold ${H()*0.09}px 'Courier New', monospace`;
   ctx.fillStyle = '#1a3a1a';
   ctx.textAlign = 'center';
   ctx.fillText(s, W()*0.65, H()*0.14);
   ctx.restore();
 }
+
 
 function drawProgressBar() {
   const pw = W()*0.7, px = W()*0.15, py = H()*0.93;
