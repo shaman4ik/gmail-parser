@@ -337,15 +337,9 @@ function drawProgressBar() {
   ctx.fillRect(px, py, pw, 5);
   ctx.fillStyle = '#2a5a2a';
   ctx.fillRect(px, py, pw*(progress/100), 5);
-  // Текст %
-  if (running) {
-    ctx.font = `${H()*0.045}px 'Courier New', monospace`;
-    ctx.fillStyle = '#1a3a1a';
-    ctx.textAlign = 'left';
-    ctx.fillText(progress+'%', W()*0.04, H()*0.1);
-  }
   ctx.restore();
 }
+
 
 function render() {
   ctx.clearRect(0,0,W(),H());
