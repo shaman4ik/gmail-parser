@@ -434,27 +434,49 @@ function startParsing() {
   running=true; score=0; progress=0;
   eggs=[]; particles=[]; wolfX=0.5; startTime=Date.now();
 
-  document.getElementById('overlay').style.display    = 'none';
+  document.getElementById('overlay').style.display     = 'none';
   document.getElementById('doneOverlay').style.display = 'none';
   document.getElementById('btnStart').classList.add('active-btn');
   document.getElementById('btnStart').textContent = '...';
   setStatus('парсинг');
   gameLoop();
 
-  // Polling прогресса
+  // Шаг 1: отправляем старт (fire-and-forget, не ждём завершения)
+  fetch(GAS_URL+"?action=start").catch(()=>{});
+
+  // Шаг 2: polling — ждём пока status станет done/error
   const poll = setInterval(() => {
     if (!running) { clearInterval(poll); return; }
-    fetch(GAS_URL+"?action=status")
-      .then(r=>r.json())
-      .then(d => { progress=parseInt(d.progress)||progress; })
-      .catch(()=>{});
-  }, 2500);
 
-  fetch(GAS_URL+"?action=start")
-    .then(r=>r.json())
-    .then(d => { clearInterval(poll); progress=100; finishGame(); })
-    .catch(()  => { clearInterval(poll); finishGame(); });
+    fetch(GAS_URL+"?action=status")
+      .then(r => r.json())
+      .then(d => {
+        const p = parseInt(d.progress) || 0;
+        if (p > progress) progress = p;
+
+        if (d.status === 'done') {
+          clearInterval(poll);
+          progress = 100;
+          finishGame();
+        } else if (d.status === 'error') {
+          clearInterval(poll);
+          setStatus('ошибка');
+          finishGame();
+        }
+        // status === 'running' — продолжаем ждать
+      })
+      .catch(() => {}); // сеть временно недоступна — продолжаем polling
+  }, 3000); // проверяем каждые 3 секунды
+
+  // Страховка: если через 10 минут всё ещё нет ответа — завершаем
+  setTimeout(() => {
+    if (running) {
+      clearInterval(poll);
+      finishGame();
+    }
+  }, 10 * 60 * 1000);
 }
+
 
 function finishGame() {
   running=false;
