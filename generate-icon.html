@@ -1,1 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh">
+<canvas id="c" width="512" height="512"></canvas>
+<script>
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+
+// Фон — бежевый корпус
+const bg = ctx.createLinearGradient(0,0,512,512);
+bg.addColorStop(0, '#e8dcc8');
+bg.addColorStop(1, '#c8b89a');
+ctx.fillStyle = bg;
+ctx.roundRect(0,0,512,512,80);
+ctx.fill();
+
+// Экран — зелёный LCD
+ctx.fillStyle = '#2a2a2a';
+ctx.roundRect(60,60,392,320,20);
+ctx.fill();
+ctx.fillStyle = '#8fa888';
+ctx.roundRect(68,68,376,304,14);
+ctx.fill();
+
+// LCD сетка
+ctx.strokeStyle = 'rgba(0,0,0,.06)';
+ctx.lineWidth = 1;
+for(let x=68;x<444;x+=4){
+  ctx.beginPath();ctx.moveTo(x,68);ctx.lineTo(x,372);ctx.stroke();
+}
+for(let y=68;y<372;y+=4){
+  ctx.beginPath();ctx.moveTo(68,y);ctx.lineTo(444,y);ctx.stroke();
+}
+
+// Волк
+ctx.font = '180px serif';
+ctx.textAlign = 'center';
+ctx.fillText('🐺', 256, 310);
+
+// Корзина
+ctx.font = '90px serif';
+ctx.fillText('🧺', 340, 330);
+
+// Яйцо слева
+ctx.font = '70px serif';
+ctx.fillText('🥚', 110, 180);
+
+// Яйцо справа
+ctx.fillText('🥚', 400, 180);
+
+// Счётчик
+ctx.font = 'bold 48px Courier New';
+ctx.fillStyle = '#1a3a1a';
+ctx.fillText('0042', 256, 120);
+
+// Нижняя надпись
+ctx.font = 'bold 28px serif';
+ctx.fillStyle = '#5a4a3a';
+ctx.letterSpacing = '4px';
+ctx.fillText('ЭЛЕКТРОНИКА', 256, 460);
+
+// Скачать
+const link = document.createElement('a');
+link.download = 'icon.png';
+link.href = c.toDataURL('image/png');
+link.style = 'display:block;margin:20px auto;color:white;font-size:20px;text-align:center';
+link.textContent = '⬇ Скачать icon.png';
+document.body.appendChild(link);
+</script>
+</body>
+</html>
 
